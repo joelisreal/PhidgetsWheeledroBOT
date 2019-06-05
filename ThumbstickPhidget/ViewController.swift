@@ -18,6 +18,9 @@ class ViewController: UIViewController {
     var button = DigitalInput()
     var motor0 = DCMotor()
     var motor1 = DCMotor()
+    var sonar = DistanceSensor()
+    var acc : Bool = false
+    var mot : Int = 0
     
     //var runCount : Float = 0
    // var runTimer : Bool = true
@@ -38,6 +41,8 @@ class ViewController: UIViewController {
                 print("Motor 0 attached")
             } else if hubPort == 2 {
                 print("Motor 1 attached")
+            } else if hubPort == 3 {
+                print("Sonar attached")
             }
         } catch let err as PhidgetError{
             print("Phidget Error " + err.description)
@@ -50,52 +55,52 @@ class ViewController: UIViewController {
     func voltageRatioChange(sender: VoltageRatioInput, voltageRatio: Double){
         do {
             print(try motor1.getVelocity())
-           // if ((try motor0.getTargetVelocity() <= 0.0) || (try motor1.getTargetVelocity() <= 0.0)) {
-              //  try motor0.setAcceleration(0.0)
-              //  try motor1.setAcceleration(0.0)
-           // } else {
             try motor0.setTargetVelocity(voltVert.getVoltageRatio())
             try motor1.setTargetVelocity(voltVert.getVoltageRatio())
             if try voltVert.getVoltageRatio() >= 0 && voltHor.getVoltageRatio() >= 0 {
                 if try voltHor.getVoltageRatio() == 0 {
                     try motor1.setAcceleration(0.0)
+                    acc = false
                 } else {
                     try motor1.setAcceleration(5.1)
+                    try motor0.setAcceleration(0.0)
+                    acc = true
                 }
+                mot = 1
 
             } else if try voltVert.getVoltageRatio() >= 0 && voltHor.getVoltageRatio() <= 0 {
                 if try voltHor.getVoltageRatio() == 0 {
                     try motor0.setAcceleration(0.0)
+                    acc = false
                 } else {
                     try motor0.setAcceleration(5.1)
+                    try motor1.setAcceleration(0.0)
+                    acc = true
                 }
-
+                mot = 0
 
             } else if try voltVert.getVoltageRatio() <= 0 && voltHor.getVoltageRatio() <= 0 {
                 if try voltHor.getVoltageRatio() == 0 {
                     try motor0.setAcceleration(0.0)
+                    acc = false
                 } else{
                     try motor0.setAcceleration(5.1)
+                    try motor1.setAcceleration(0.0)
+                    acc = true
                 }
+                mot = 0
             }  else if try voltVert.getVoltageRatio() <= 0 && voltHor.getVoltageRatio() >= 0 {
                 if try voltHor.getVoltageRatio() == 0 {
                     try motor1.setAcceleration(0.0)
+                    acc = false
                 } else {
                     try motor1.setAcceleration(5.1)
+                    try motor0.setAcceleration(0.0)
+                    acc = true
                 }
+                mot = 1
             }
-//            } else {
-//                 try motor0.setTargetVelocity(voltVert.getVoltageRatio())
-//                 try motor1.setTargetVelocity(voltVert.getVoltageRatio())
-//                 try motor0.setAcceleration(0.0)
-//               //  print(5)
-//                 try motor1.setAcceleration(0.0)
-//           // }
-//            }
-//            if try volt.getTargetVelocity() <= 0.0 || try motor1.getTargetVelocity() <= 0.0 {
-//                try motor0.setAcceleration(0.0)
-//                try motor1.setAcceleration(0.0)
-//            }
+
             
         } catch let err as PhidgetError{
             print("Phidget Error " + err.description)
@@ -106,7 +111,19 @@ class ViewController: UIViewController {
     }
     
 
-
+    func velocityChange(sender: DCMotor, velocity: Double) {
+        do {
+            if acc == true {
+                
+            } else {
+                
+            }
+        } catch let err as PhidgetError{
+            print("Phidget Error " + err.description)
+        } catch {
+            //catch other errors here
+        }
+    }
     func stateChange_handler(sender: DigitalInput, state: Bool){
         do {
             if state == true {
@@ -172,26 +189,32 @@ class ViewController: UIViewController {
             try motor1.setHubPort(2)
             try motor1.setIsHubPortDevice(false)
             
+            try sonar.setDeviceSerialNumber(528025)
+            try sonar.setHubPort(3)
+            try sonar.setIsHubPortDevice(false)
             //attach handler
             let _ = voltVert.attach.addHandler(attach_handler)
             let _ = voltHor.attach.addHandler(attach_handler)
             let _ = button.attach.addHandler(attach_handler)
             let _ = motor0.attach.addHandler(attach_handler)
             let _ = motor1.attach.addHandler(attach_handler)
-
+            let _ = sonar.attach.addHandler(attach_handler)
+            
             //add state change handlers
             let _ = voltVert.voltageRatioChange.addHandler(voltageRatioChange)
             let _ = voltHor.voltageRatioChange.addHandler(voltageRatioChange)
+            let _ = motor0.velocityUpdate.addHandler(velocityChange)
+            let _ = motor1.velocityUpdate.addHandler(velocityChange)
             let _ = button.stateChange.addHandler(stateChange_handler)
 
             
             
             //open objects
-            try voltVert.open(timeout: 1000)
-            try voltHor.open(timeout: 1000)
-            try button.open(timeout: 1000)
-            try motor0.open(timeout: 1000)
-            try motor1.open(timeout: 1000)
+            try voltVert.open()
+            try voltHor.open()
+            try button.open()
+            try motor0.open()
+            try motor1.open()
             
         } catch let err as PhidgetError{
             print("Phidget Error " + err.description)
